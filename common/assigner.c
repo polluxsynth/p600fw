@@ -3,6 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "assigner.h"
+#include "display.h"
 
 struct allocation_s
 {
@@ -256,6 +257,7 @@ reassign:
 			// first, try to get a free voice
 
 			v=getAvailableVoice(note,timestamp);
+			int va = v;
 
 			// no free voice, try to steal one
 
@@ -263,6 +265,8 @@ reassign:
 				v=getDispensableVoice(note);
 
 			// we might still have no voice
+
+			sevenSeg_setAscii(va + '1', v + '1');
 
 			if(v<0)
 				return;
