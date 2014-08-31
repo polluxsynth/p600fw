@@ -14,7 +14,7 @@
 	#ifdef RELEASE
 		#define VERSION RELEASE
 	#else
-		#define VERSION "alpha "__DATE__
+		#define VERSION "rw alpha "__DATE__
 	#endif
 #else
 	#define VERSION "debug "__DATE__ " " __TIME__
