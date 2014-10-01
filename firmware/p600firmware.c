@@ -1,6 +1,7 @@
 #include <avr/io.h>
 #include <avr/pgmspace.h>
 #include <avr/interrupt.h>
+#include <avr/wdt.h>
 #include <util/delay.h>
 #include <util/crc16.h>
 #include <string.h>
@@ -20,6 +21,9 @@
 #define CPU_250kHz      0x06
 #define CPU_125kHz      0x07
 #define CPU_62kHz       0x08
+
+// from http://www.atmel.com/webdoc/AVRLibcReferenceManual/FAQ_1faq_softreset.html
+#define soft_reset() do{wdt_enable(WDTO_15MS);for(;;);}while(0)
 
 static FORCEINLINE void setAddr(uint16_t addr, uint8_t * b, uint8_t * d, uint8_t * e, int8_t io)
 {
@@ -332,6 +336,11 @@ void NRWW_SECTION(".updater") updater_main(void)
 	uint16_t crc,pageIdx,pageSize,crcSent,byteIdx;
 	uint8_t awaiting[4];
 	static uint8_t page[SPM_PAGESIZE];
+
+	// disable watchdog to avoid continual reset after watchdog has
+	// been used to reset after previous update
+	MCUSR = 0;
+	wdt_disable();
 	
 	// power supply still ramping up voltage	
 	
@@ -481,8 +490,13 @@ void NRWW_SECTION(".updater") updater_main(void)
 	// show 'S' or 'E' on the 7seg, depending on success or error
 	hardware_write(1,0x09,(success)?0x6d:0x79);
 
-	// loop infinitely
-	for(;;);
+	// wait for button to be pressed
+	hardware_write(1,0x08,0x01);
+	do {
+		CYCLE_WAIT(10);
+	} while(hardware_read(1,0x0a)==0);
+
+	soft_reset();
 }
 
 // override __init function to call updater, so that we can check if we need to go to update mode.
